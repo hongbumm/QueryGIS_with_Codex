@@ -1,0 +1,6 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "querygis-with-codex",
+  "version": "0.1.0",
+  "description": "Send GIS tasks to QueryGIS, which owns QGIS planning, execution and validation."
+}
