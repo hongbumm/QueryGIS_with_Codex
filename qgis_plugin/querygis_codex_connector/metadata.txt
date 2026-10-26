@@ -1,12 +1,12 @@
 [general]
-name=QueryGIS with Codex
+name=QueryGIS Codex Connector
 qgisMinimumVersion=3.28
 qgisMaximumVersion=3.99
-description=QueryGIS owns GIS planning and execution; Codex submits and monitors tasks.
-version=0.1.0
+description=Connect Codex to the installed QueryGIS plugin and its existing server.
+version=0.2.0
 author=3DLabs, Juseong Lee
 email=juseonglee99@3dlabs.co.kr
-about=Experimental QueryGIS integration with API key entry and local Codex MCP control.
+about=Task forwarding only. Use the existing QueryGIS panel and QueryGIS-issued service key.
 category=Plugins
 icon=icon.png
 experimental=True

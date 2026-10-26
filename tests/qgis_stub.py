@@ -80,6 +80,10 @@ class Feedback:
     def pushInfo(self, message): pass
 
 
+class MessageLog(QtCore.QObject):
+    messageReceived = QtCore.pyqtSignal(str, str, int)
+
+
 class Tree(QtWidgets.QTreeView):
     def __init__(self):
         super().__init__()
@@ -105,6 +109,8 @@ class Interface(QtCore.QObject):
     def addPluginToMenu(self, menu, action): pass
     def removePluginMenu(self, menu, action): pass
     def removeToolBarIcon(self, action): pass
+    def messageBar(self): return self
+    def pushMessage(self, *args, **kwargs): pass
 
 
 def install():
@@ -118,13 +124,17 @@ def install():
                  "QgsSymbol", "QgsRendererCategory", "QgsCategorizedSymbolRenderer", "QgsPalLayerSettings",
                  "QgsTextFormat", "QgsTextBufferSettings", "QgsVectorLayerSimpleLabeling", "QgsProperty"):
         setattr(core, name, type(name, (), {}))
-    core.Qgis = type("Qgis", (), {"Critical": 2, "QGIS_VERSION": "test-stub"})
+    core.Qgis = type("Qgis", (), {"Critical": 2, "Info": 0, "Warning": 1, "QGIS_VERSION": "test-stub"})
     core.QgsMapLayer = type("QgsMapLayer", (), {"VectorLayer": 0, "RasterLayer": 1})
     core.QgsWkbTypes = type("QgsWkbTypes", (), {"displayString": staticmethod(lambda value: "Point")})
     core.QgsProject, core.QgsVectorLayer, core.QgsRasterLayer = Project, VectorLayer, RasterLayer
     core.QgsProcessingFeedback = Feedback
+    log = MessageLog()
+    core.QgsApplication.messageLog = staticmethod(lambda: log)
     pyqt.QtCore, pyqt.QtGui, pyqt.QtWidgets = QtCore, QtGui, QtWidgets
     utils.iface = None
+    utils.plugins = {}
+    utils.pluginMetadata = lambda name, field: "QueryGIS" if name == "query_gis" else name
     qgis.core, qgis.PyQt, qgis.utils = core, pyqt, utils
     for name, module in {"qgis": qgis, "qgis.core": core, "qgis.utils": utils, "qgis.PyQt": pyqt,
                          "qgis.PyQt.QtCore": QtCore, "qgis.PyQt.QtGui": QtGui,
@@ -133,3 +143,7 @@ def install():
     processing = types.ModuleType("processing")
     processing.run = lambda *args, **kwargs: {"OUTPUT": VectorLayer(name="buffer")}
     sys.modules["processing"] = processing
+    for name in ("qgis.gui", "qgis.analysis"):
+        module = types.ModuleType(name)
+        module.__all__ = []
+        sys.modules[name] = module

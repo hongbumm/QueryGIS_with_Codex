@@ -7,8 +7,7 @@ import uuid
 TERMINAL = {"succeeded", "failed", "cancelled"}
 TRANSITIONS = {
     "queued": {"planning", "failed", "cancelled"},
-    "planning": {"awaiting_approval", "running", "succeeded", "failed", "cancelled"},
-    "awaiting_approval": {"running", "failed", "cancelled"},
+    "planning": {"running", "succeeded", "failed", "cancelled"},
     "running": {"planning", "succeeded", "failed", "cancelled"},
 }
 
@@ -23,24 +22,19 @@ class TaskStore:
     def submit(self, payload, origin="codex"):
         if not isinstance(payload, dict):
             raise ValueError("A JSON object is required")
-        unknown = set(payload) - {"instruction", "layer_ids", "request_id", "mode"}
+        unknown = set(payload) - {"instruction", "request_id", "mode"}
         if unknown:
             raise ValueError("Unsupported task fields: " + ", ".join(sorted(unknown)))
         instruction = payload.get("instruction")
         if not isinstance(instruction, str) or not 1 <= len(instruction.strip()) <= 12000:
             raise ValueError("instruction must contain 1 to 12000 characters")
-        layer_ids = payload.get("layer_ids", [])
-        if not isinstance(layer_ids, list) or len(layer_ids) > 100 or any(
-            not isinstance(i, str) or not 1 <= len(i) <= 300 for i in layer_ids
-        ):
-            raise ValueError("layer_ids must be a list of up to 100 layer IDs")
         request_id = payload.get("request_id")
         if not isinstance(request_id, str) or not 1 <= len(request_id) <= 128:
             raise ValueError("A stable request_id is required for safe retries")
         mode = payload.get("mode", "run")
         if mode not in {"ask", "run"}:
             raise ValueError("mode must be ask or run")
-        normalized = {"instruction": instruction.strip(), "layer_ids": layer_ids, "mode": mode}
+        normalized = {"instruction": instruction.strip(), "mode": mode}
         with self._lock:
             if request_id in self._requests:
                 old = self._tasks[self._requests[request_id]]
@@ -80,7 +74,7 @@ class TaskStore:
     def update(self, task_id, state, message, result=None):
         with self._lock:
             task = self._tasks[task_id]
-            if state not in TRANSITIONS.get(task["state"], set()):
+            if task["state"] in TERMINAL or (state != task["state"] and state not in TRANSITIONS.get(task["state"], set())):
                 return False
             task.update(state=state, message=message, updated_at=time.time())
             if result is not None:
@@ -92,7 +86,7 @@ class TaskStore:
             task = self._tasks[task_id]
             if task["state"] not in TERMINAL:
                 task["cancel_event"].set()
-                if task["state"] in {"queued", "planning", "awaiting_approval"}:
+                if task["state"] in {"queued", "planning"}:
                     self.update(task_id, "cancelled", "작업 취소됨")
                 else:
                     task["message"] = "취소 요청됨: 실행 중인 처리가 종료될 때 반영됩니다"

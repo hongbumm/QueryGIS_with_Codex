@@ -15,11 +15,11 @@ class QueryGISClient:
         try:
             connection = json.loads(self.discovery_file.read_text(encoding="utf-8"))
             port, token = connection["port"], connection["token"]
-            if (connection.get("version") != 1 or type(port) is not int or not 1 <= port <= 65535
+            if (connection.get("version") != 2 or type(port) is not int or not 1 <= port <= 65535
                     or not isinstance(token, str) or not 32 <= len(token) <= 128):
                 raise ValueError()
         except (OSError, ValueError, KeyError, TypeError):
-            raise RuntimeError("QGIS에서 QueryGIS with Codex 패널을 열고 '연결 시작'을 누르세요") from None
+            raise RuntimeError("QGIS에서 기존 QueryGIS와 QueryGIS Codex Connector를 활성화한 뒤 'QueryGIS ↔ Codex 연결'을 누르세요") from None
         body = None if payload is None else json.dumps(payload).encode("utf-8")
         req = Request("http://127.0.0.1:%d%s" % (port, path), data=body,
                       headers={"Authorization": "Bearer " + token, "Content-Type": "application/json"}, method=method)

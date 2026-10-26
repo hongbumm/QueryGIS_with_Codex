@@ -1,4 +1,4 @@
-"""Register this checkout's local MCP adapter with Codex, never a provider API key."""
+"""Prepare the local runtime and install QueryGIS as a real Codex plugin."""
 import argparse
 import json
 import os
@@ -8,7 +8,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-NAME = "querygis_with_codex"
+SELECTOR = "querygis@querygis-local"
 
 
 def find_codex():
@@ -19,35 +19,45 @@ def find_codex():
     candidates = list(local.glob("*/codex.exe"))
     if candidates:
         return str(max(candidates, key=lambda path: path.stat().st_mtime))
-    raise RuntimeError("Codex 실행 파일을 찾지 못했습니다. Codex를 설치하거나 PATH에 추가하세요")
+    raise RuntimeError("Codex를 설치하거나 실행 파일을 PATH에 추가하세요")
 
 
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--print-config", action="store_true")
-    args = parser.parse_args()
+def runtime_file():
+    base = Path(os.environ.get("LOCALAPPDATA", str(Path.home() / ".local" / "share")))
+    return base / "QueryGIS_with_Codex" / "runtime.json"
+
+
+def install():
     python = ROOT / ".venv" / ("Scripts/python.exe" if os.name == "nt" else "bin/python")
     if not python.exists():
-        raise RuntimeError("먼저 scripts/setup.ps1을 실행해 MCP 환경을 준비하세요")
-    server = ROOT / "codex_mcp" / "server.py"
-    if args.print_config:
-        print(json.dumps({"name": NAME, "command": str(python), "args": [str(server)]}, indent=2))
-        return
+        raise RuntimeError("먼저 scripts/setup.ps1로 MCP 환경을 준비하세요")
+    subprocess.run([str(python), "-c", "import mcp"], check=True)
+    runtime = runtime_file()
+    runtime.parent.mkdir(parents=True, exist_ok=True)
+    runtime.write_text(json.dumps({"version": 1, "python": str(python)}), encoding="utf-8")
     codex = find_codex()
-    old = subprocess.run([codex, "mcp", "get", NAME, "--json"], capture_output=True, text=True)
+    subprocess.run([codex, "plugin", "marketplace", "add", str(ROOT), "--json"], check=True)
+    subprocess.run([codex, "plugin", "add", SELECTOR, "--json"], check=True)
+    # Retire only the exact standalone prototype connection created by version 0.1.
+    old = subprocess.run([codex, "mcp", "get", "querygis_with_codex", "--json"], capture_output=True, text=True)
     if old.returncode == 0:
-        existing = json.loads(old.stdout).get("transport", {})
-        if existing.get("command") == str(python) and existing.get("args") == [str(server)]:
-            print("Codex MCP connection is already configured for this checkout.")
-            return
-        raise RuntimeError("같은 이름의 Codex 연결이 이미 있습니다. 기존 설정을 확인한 뒤 다시 등록하세요")
-    subprocess.run([codex, "mcp", "add", NAME, "--", str(python), str(server)], check=True)
-    print("Codex 연결 등록 완료. 새 채팅에서 QueryGIS 도구를 사용하세요.")
+        transport = json.loads(old.stdout).get("transport", {})
+        if (transport.get("command") == str(python) and
+                transport.get("args") == [str(ROOT / "codex_mcp" / "server.py")]):
+            subprocess.run([codex, "mcp", "remove", "querygis_with_codex"], check=True)
+    print("QueryGIS Codex 플러그인 설치 완료. 새 채팅에서 사용하세요.")
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--print-config", action="store_true")
+    args = parser.parse_args()
     try:
-        main()
+        if args.print_config:
+            print(json.dumps({"plugin": SELECTOR, "marketplace": str(ROOT),
+                              "runtime_file": str(runtime_file())}, indent=2))
+        else:
+            install()
     except (RuntimeError, subprocess.CalledProcessError) as exc:
         print(str(exc), file=sys.stderr)
         sys.exit(1)

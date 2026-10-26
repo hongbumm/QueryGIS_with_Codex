@@ -1,40 +1,38 @@
-# 역할과 실행 경계
+# 기존 QueryGIS를 사용하는 Codex 플러그인
 
-## QueryGIS
+## 소유권
 
-`qgis_plugin/querygis_with_codex/plugin.py`는 원본 QueryGIS를 확장합니다. 원본 UI·레이어 표시·문맥 수집 helper를 재사용하고 새 작업 흐름을 연결합니다. 원본 `query_gis.py`의 백엔드 전용 `process_query`와 실행 재시도 경로는 새 작업에서는 사용하지 않습니다.
+QueryGIS가 하는 GIS 작업은 기존과 같습니다. 새 기능은 외부 작업 전달과 상태 회신입니다.
 
-- QTimer가 메인 스레드에서 작업함을 확인합니다.
-- 메인 스레드에서 레이어 ID를 확인하고 QGIS 객체를 JSON 데이터로 복사합니다.
-- AI 요청만 별도 Python 작업 스레드에서 수행합니다. 이 스레드는 QGIS 객체를 보유하지 않습니다.
-- Qt 신호로 응답을 메인 스레드에 전달합니다.
-- 검토 정책을 적용한 뒤 메인 스레드에서 코드를 실행하고 새 레이어 유효성을 확인합니다.
-- 실패 시 수정안 생성은 한 번만 수행하고 재실행 전 검토를 받습니다.
+- Codex는 목표를 전달하고 결과를 확인합니다.
+- 기존 QueryGIS가 선택 레이어 문맥, 자체 발급 Key, 서버 URL과 요청 payload를 정합니다.
+- 기존 QueryGIS_Flask가 Key 검증, AI 공급자 자격증명, 모델, 지침, RAG와 수정 요청을 관리합니다.
+- 기존 QueryGIS가 생성 코드를 QGIS에서 실행합니다.
 
-`bridge.py`는 인증된 루프백 HTTP 서버입니다. HTTP 스레드는 TaskStore와 복사된 상태만 읽고 쓰며 QGIS나 Qt 화면을 호출하지 않습니다.
+## QGIS 연결부
 
-`tasks.py`는 스레드 안전한 상태 전이와 idempotency를 제공합니다. 상태와 결과는 메모리에 있으며 QGIS 재시작 후 복구하지 않습니다. 중복 제거를 유지하기 위해 완료 작업을 자동 제거하지 않고 세션당 100건으로 제한합니다.
+`qgis_plugin/querygis_codex_connector`는 원본 QueryGIS의 사본을 포함하지 않습니다. 설치·활성화된 QueryGIS 인스턴스를 찾고 `process_query()`를 호출합니다.
 
-## Codex
+요청이 실행되는 동안 `handle_response`, `handle_error`, `run_code_string`, `append_chat_message`, `_start_backend_attempt`를 메모리에서 감싸 진행과 결과를 관찰합니다. 원래 메서드는 그대로 호출하며 연결 해제 시 복원합니다. 디스크의 원본 플러그인과 서버 파일을 편집하지 않습니다. 초기 응답이 `tool_followup`이나 RAG 재요청을 시작하면 다음 응답까지 같은 작업을 유지합니다. 기존 코드의 동기 `/fix-code` 경로도 그대로 유지됩니다.
 
-`codex_mcp/server.py`는 공식 Python MCP SDK의 stdio 서버입니다. 로컬 연결 파일을 읽고 QueryGIS 작업 API를 호출합니다. MCP 서버는 QGIS를 import하지 않으며 AI 공급자를 호출하거나 API Key를 받지 않습니다.
+HTTP 스레드에는 QGIS 객체를 전달하지 않습니다. QTimer가 메인 스레드에서 작업함을 읽고 기존 QueryGIS를 호출합니다. 새 레이어 ID·유효성·개수와 기존 출력 메시지는 관찰 결과입니다. 결과의 의미적 정확도까지 연결부가 별도로 판정하지 않습니다.
 
-| 도구 | 동작 |
-| --- | --- |
-| get_connection_status | QueryGIS가 미리 복사한 레이어 ID·이름·CRS와 공급자 설정 여부 조회 |
-| submit_task | 자연어 instruction, request_id, 선택 layer_ids, ask/run 접수 |
-| get_task_status | 작업 상태 조회 |
-| get_task_result | 작업 상태 및 결과 레이어·출력·오류 조회 |
-| cancel_task | 협력적 취소 요청 |
+연결 중 다른 플러그인이 같은 메서드를 바꾸거나 원본 QueryGIS 자체를 재로드한 경우에는 연결을 껐다 다시 켜야 합니다. 대상 인터페이스가 맞지 않으면 명시적으로 실패합니다.
 
-공개 HTTP 경로는 인증이 필요한 `GET /health`, `POST /tasks`, `GET /tasks/{id}`, `POST /tasks/{id}/cancel`뿐입니다. 코드 실행·API Key 변경·원격 승인 API는 제공하지 않습니다. 승인과 API Key 입력은 QGIS 패널에서만 가능합니다.
+## Codex 패키지
 
-이 경계는 이 플러그인이 제공하는 도구에 적용됩니다. Codex가 별도 파일/셸 도구로 QGIS에 접근할 수 있는 권한까지 이 플러그인이 OS 수준에서 제거하지는 않습니다. 제공된 스킬과 도구 instructions는 모든 QGIS 작업을 QueryGIS로 전달하도록 지시합니다.
+`plugins/querygis/plugin.json`, `mcp.json`, `skills/`, `server/`, `assets/`를 하나의 실제 플러그인으로 설치합니다. `.agents/plugins/marketplace.json`은 개인/저장소 마켓플레이스에 QueryGIS를 노출합니다.
 
-## 참고한 공식 문서
+MCP 어댑터에는 QueryGIS 서비스 Key나 AI 공급자 Key를 받는 입력이 없습니다. `launch.py`는 설치 시 준비한 로컬 Python 실행 경로를 읽어, 플러그인이 Codex 캐시에 복사되어도 SDK를 찾을 수 있게 합니다. SDK는 고정한 `mcp==2.3.0`을 사용합니다. 시스템 Python은 3.11 이상이어야 합니다.
 
-- [Codex MCP](https://learn.chatgpt.com/docs/extend/mcp?surface=cli)
+연결 API는 인증된 `GET /health`, `POST /tasks`, `GET /tasks/{id}`, `POST /tasks/{id}/cancel`뿐입니다. 서비스 Key 입력·모델 변경·임의 코드 실행 API는 없습니다.
+
+## 기존 서버 계약에서 확인한 내용
+
+`QueryGIS_Flask/app.py`의 `/chat`과 `/fix-code`는 사용자 `api_key`를 유효/폐기 목록과 비교합니다. 실제 AI 호출에는 서버의 `GOOGLE_API_KEY`를 사용합니다. OAuth 경로는 기존 구독 검사와 사용량 기록을 사용합니다. 이 연결부는 해당 분기를 구현하거나 재정의하지 않습니다.
+
+## 공식 문서
+
+- [플러그인 패키징과 개인 마켓플레이스](https://developers.openai.com/plugins/build/plugins)
+- [Codex MCP](https://learn.chatgpt.com/docs/extend/mcp)
 - [MCP Python SDK](https://py.sdk.modelcontextprotocol.io/)
-- [OpenAI Responses API](https://developers.openai.com/api/reference/resources/responses/methods/create)
-- [Gemini generateContent](https://ai.google.dev/api/generate-content)
-- [QGIS 메인 스레드 및 작업 지침](https://docs.qgis.org/3.44/en/docs/pyqgis_developer_cookbook/tasks.html)

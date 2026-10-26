@@ -17,7 +17,7 @@ class BridgeServer:
         self.discovery_file = discovery_file or connection_path()
         self.token = secrets.token_urlsafe(32)
         self._lock = threading.Lock()
-        self._snapshot = {"provider_configured": False, "layers": [], "project_crs": ""}
+        self._snapshot = {"querygis_ready": False, "layers": [], "project_crs": ""}
         self._server = None
         self._thread = None
 
@@ -57,7 +57,7 @@ class BridgeServer:
         bridge = self
 
         class Handler(BaseHTTPRequestHandler):
-            server_version = "QueryGIS/0.1"
+            server_version = "QueryGIS-Connector/0.2"
 
             def log_message(self, *args):
                 pass
@@ -86,7 +86,7 @@ class BridgeServer:
                 if not self._authorized():
                     return
                 if self.path == "/health":
-                    self._reply(200, {"service": "querygis-with-codex", "version": "0.1.0",
+                    self._reply(200, {"service": "querygis-with-codex", "version": "0.2.0",
                                       **bridge.snapshot()})
                     return
                 match = re.fullmatch(r"/tasks/([a-f0-9]{32})", self.path)
@@ -112,8 +112,8 @@ class BridgeServer:
                 try:
                     payload = json.loads(self.rfile.read(length))
                     if self.path == "/tasks":
-                        if not bridge.snapshot().get("provider_configured"):
-                            self._reply(409, {"error": "QueryGIS 패널에서 공급자, 모델, API Key를 입력하세요"})
+                        if not bridge.snapshot().get("querygis_ready"):
+                            self._reply(409, {"error": "기존 QueryGIS 패널에서 QueryGIS 발급 Key 또는 로그인을 확인하세요"})
                             return
                         self._reply(202, bridge.store.submit(payload))
                         return
@@ -136,7 +136,7 @@ class BridgeServer:
         self._thread.start()
         try:
             self.discovery_file.parent.mkdir(parents=True, exist_ok=True)
-            data = {"version": 1, "port": self._server.server_port, "token": self.token, "pid": os.getpid()}
+            data = {"version": 2, "port": self._server.server_port, "token": self.token, "pid": os.getpid()}
             temporary = self.discovery_file.with_suffix(".tmp")
             fd = os.open(str(temporary), os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
             with os.fdopen(fd, "w", encoding="utf-8") as handle:

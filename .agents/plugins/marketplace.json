@@ -1,0 +1,10 @@
+{
+  "name": "querygis-local",
+  "interface": {"displayName": "QueryGIS · 개인 플러그인"},
+  "plugins": [{
+    "name": "querygis",
+    "source": {"source": "local", "path": "./plugins/querygis"},
+    "policy": {"installation": "AVAILABLE", "authentication": "ON_INSTALL"},
+    "category": "Productivity"
+  }]
+}

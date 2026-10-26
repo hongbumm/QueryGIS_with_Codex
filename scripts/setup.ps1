@@ -13,3 +13,5 @@ if ($LASTEXITCODE -ne 0) { throw 'MCP dependency installation failed' }
 if ($LASTEXITCODE -ne 0) { throw 'Codex registration failed' }
 & $venvPython (Join-Path $PSScriptRoot 'build_plugin.py')
 if ($LASTEXITCODE -ne 0) { throw 'QGIS plugin packaging failed' }
+& $venvPython (Join-Path $PSScriptRoot 'install_qgis_connector.py')
+if ($LASTEXITCODE -ne 0) { throw 'QGIS connector installation failed' }
