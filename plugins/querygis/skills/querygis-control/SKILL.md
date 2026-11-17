@@ -5,7 +5,7 @@ description: Request GIS work through the existing QueryGIS plugin and QueryGIS_
 
 Use this plugin's QueryGIS MCP tools. The user key is issued by QueryGIS for its service. AI-provider credentials and model selection belong to the existing QueryGIS_Flask server.
 
-1. Check `get_connection_status`. If disconnected, have the user enable the existing QueryGIS and QueryGIS Codex Connector in QGIS, then select QueryGIS ↔ Codex 연결. If `querygis_ready` is false, have the user enter the QueryGIS-issued Key or use their existing login in the original QueryGIS panel. Never ask for OpenAI/Gemini keys or collect service keys in chat.
+1. Check `get_connection_status`. If disconnected, have the user sign in with Google on an active Pro plan in QueryGIS and choose **Connect with Codex** in the QueryGIS settings, then check the connection again. For a legacy standalone connector, follow its existing connection instructions. Never ask for OpenAI/Gemini keys or collect service keys in chat.
 2. Submit a natural-language GIS goal with a unique `request_id`. QueryGIS uses its existing selected-layer context. Reuse the same request ID after uncertain delivery.
 3. QueryGIS decides algorithms, code, CRS handling and execution. Never send Python/SQL scripts inside the task instruction. Never use shell commands, direct project-file editing, or a separate QGIS controller to perform the task.
 4. Use `mode=ask` for the existing Ask workflow and `mode=run` for Ask and Run. Poll the same task at reasonable intervals. The connector introduces no additional analysis mode or model selection.

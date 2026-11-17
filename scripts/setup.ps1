@@ -1,4 +1,4 @@
-param([string]$PythonCommand = 'python')
+param([string]$PythonCommand = 'python', [switch]$CodexOnly)
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $PSScriptRoot
 $venvPath = Join-Path $projectRoot '.venv'
@@ -13,5 +13,7 @@ if ($LASTEXITCODE -ne 0) { throw 'MCP dependency installation failed' }
 if ($LASTEXITCODE -ne 0) { throw 'Codex registration failed' }
 & $venvPython (Join-Path $PSScriptRoot 'build_plugin.py')
 if ($LASTEXITCODE -ne 0) { throw 'QGIS plugin packaging failed' }
-& $venvPython (Join-Path $PSScriptRoot 'install_qgis_connector.py')
-if ($LASTEXITCODE -ne 0) { throw 'QGIS connector installation failed' }
+if (-not $CodexOnly) {
+    & $venvPython (Join-Path $PSScriptRoot 'install_qgis_connector.py')
+    if ($LASTEXITCODE -ne 0) { throw 'QGIS connector installation failed' }
+}

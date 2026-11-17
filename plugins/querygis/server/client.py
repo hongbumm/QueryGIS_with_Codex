@@ -19,10 +19,11 @@ class QueryGISClient:
                     or not isinstance(token, str) or not 32 <= len(token) <= 128):
                 raise ValueError()
         except (OSError, ValueError, KeyError, TypeError):
-            raise RuntimeError("QGIS에서 기존 QueryGIS와 QueryGIS Codex Connector를 활성화한 뒤 'QueryGIS ↔ Codex 연결'을 누르세요") from None
+            raise RuntimeError("Open QueryGIS in QGIS and choose Connect with Codex in settings. A Google account with an active Pro plan is required.") from None
         body = None if payload is None else json.dumps(payload).encode("utf-8")
         req = Request("http://127.0.0.1:%d%s" % (port, path), data=body,
-                      headers={"Authorization": "Bearer " + token, "Content-Type": "application/json"}, method=method)
+                      headers={"Authorization": "Bearer " + token, "Content-Type": "application/json",
+                               "X-QueryGIS-Codex": "1"}, method=method)
         try:
             # Local traffic must never be routed through a system HTTP proxy.
             with build_opener(ProxyHandler({})).open(req, timeout=5) as response:
