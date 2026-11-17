@@ -64,7 +64,7 @@ Set-Location QueryGIS_with_Codex
 지금 프로젝트 좌표계 뭐야?
 ```
 
-아래는 요청을 실제로 받은 QueryGIS 화면입니다. 이 예에서는 **EPSG:4326 (WGS 84)**가 반환됐어요. 결과는 QGIS에서 열려 있는 프로젝트에 따라 달라집니다.
+실제 테스트에서 Codex는 “현재 프로젝트 좌표계는 EPSG:4326(WGS 84)입니다.”라고 답했어요. 아래는 읽기 전용 좌표계 요청과 결과가 표시된 QueryGIS 화면입니다. 결과는 QGIS에서 열려 있는 프로젝트에 따라 달라집니다.
 
 ![QueryGIS의 실시간 좌표계 요청과 EPSG:4326 결과](docs/images/qgis-crs-result.png)
 

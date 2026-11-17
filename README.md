@@ -65,7 +65,7 @@ Use QueryGIS to tell me the current QGIS project’s coordinate reference system
 (CRS). Keep the project and its layers unchanged.
 ```
 
-You can also ask in Korean, for example `지금 프로젝트 좌표계 뭐야?` In the live example below, QueryGIS received the request and returned **EPSG:4326 (WGS 84)**. Your answer depends on the project open in QGIS.
+You can also ask in Korean, for example `지금 프로젝트 좌표계 뭐야?` In a live test, Codex reported **EPSG:4326 (WGS 84)**. The screenshot below shows a read-only CRS request and its result in QueryGIS. Your answer depends on the project open in QGIS.
 
 ![Live CRS request in the QueryGIS panel with output EPSG:4326](docs/images/qgis-crs-result.png)
 
