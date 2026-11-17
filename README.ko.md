@@ -56,6 +56,15 @@ Set-Location QueryGIS_with_Codex
 
 ![QueryGIS 설정에 Pro 요금제와 Connected to Codex가 표시된 화면](docs/images/qgis-connected.png)
 
+<details>
+<summary>실제 Codex 설치 및 연결 확인 대화 보기</summary>
+
+Codex가 GitHub에서 QueryGIS를 설치하고 연결까지 확인한 실제 대화입니다. 이 세션에서는 Codex가 설치된 저장소에서 플러그인의 읽기 전용 연결 확인을 실행했습니다.
+
+![QueryGIS 설치 완료와 연결 상태, 프로젝트 좌표계 EPSG:4326이 표시된 Codex 대화](docs/images/codex-install-and-connect.png)
+
+</details>
+
 ## 3. 현재 프로젝트에 대해 질문하기
 
 연결 후 Codex에 아래처럼 입력해보세요.
@@ -64,7 +73,7 @@ Set-Location QueryGIS_with_Codex
 지금 프로젝트 좌표계 뭐야?
 ```
 
-실제 테스트에서 Codex는 “현재 프로젝트 좌표계는 EPSG:4326(WGS 84)입니다.”라고 답했어요. 아래는 읽기 전용 좌표계 요청과 결과가 표시된 QueryGIS 화면입니다. 결과는 QGIS에서 열려 있는 프로젝트에 따라 달라집니다.
+QueryGIS 패널에 요청과 결과가 표시됩니다. 아래 예시에서 프로젝트 좌표계는 **EPSG:4326 (WGS 84)**입니다. 결과는 QGIS에서 열려 있는 프로젝트에 따라 달라집니다.
 
 ![QueryGIS의 실시간 좌표계 요청과 EPSG:4326 결과](docs/images/qgis-crs-result.png)
 

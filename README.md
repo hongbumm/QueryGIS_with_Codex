@@ -56,6 +56,15 @@ Set-Location QueryGIS_with_Codex
 
 ![QueryGIS settings showing an active Pro plan and Connected to Codex](docs/images/qgis-connected.png)
 
+<details>
+<summary>See an actual Codex installation and connection check</summary>
+
+This chat shows Codex installing QueryGIS from GitHub and then confirming the connection. In this session, Codex ran the plugin’s read-only connection check from the installed repository.
+
+![Codex chat showing a successful QueryGIS installation and connection check, with project CRS EPSG:4326](docs/images/codex-install-and-connect.png)
+
+</details>
+
 ## 3. Ask about the current project
 
 Try this in Codex once the connection is ready.
@@ -65,7 +74,7 @@ Use QueryGIS to tell me the current QGIS project’s coordinate reference system
 (CRS). Keep the project and its layers unchanged.
 ```
 
-You can also ask in Korean, for example `지금 프로젝트 좌표계 뭐야?` In a live test, Codex reported **EPSG:4326 (WGS 84)**. The screenshot below shows a read-only CRS request and its result in QueryGIS. Your answer depends on the project open in QGIS.
+You can also ask in Korean, for example `지금 프로젝트 좌표계 뭐야?` The QueryGIS panel shows the request and its result. In this example, the project uses **EPSG:4326 (WGS 84)**. Your result depends on the project open in QGIS.
 
 ![Live CRS request in the QueryGIS panel with output EPSG:4326](docs/images/qgis-crs-result.png)
 
